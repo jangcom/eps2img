@@ -1,0 +1,52 @@
+    NAME
+        eps2raster - Rasterize PS/EPS files
+
+    SYNOPSIS
+        perl eps2raster.pl [file ...|-a] [-raster=format ...] [-dpi=int]
+                           [-nofm] [-nopause]
+
+    DESCRIPTION
+        eps2raster lets the user easily convert PS/EPS files
+        to raster images using Ghostscript.
+        eps2raster interfaces Ghostscript via yet another interface
+        called Ghostscript.pm:
+            eps2raster.pl --- Ghostscript.pm --- Ghostscript
+        where the Ghostscript.pm is a Moose class that
+        the author has written for his Perl program called phitar.
+
+    OPTIONS
+        -a
+            All PS/EPS files in the current working directory
+            are rasterized to the designated raster format.
+        -raster=format ...
+            Raster formats separated by the comma (,).
+            png (default)
+            png_transparent
+            jpg/jpeg
+        -dpi=int
+            Resolution. Default 300, sane range 100--600.
+        -nofm
+            Do not show the front matter at the beginning of the program.
+        -nopause
+            Do not pause the shell at the end of the program.
+
+    EXAMPLES
+        perl eps2raster.pl shibas.ps -dpi=400
+        perl eps2raster.pl kuro_shiba.eps mame_shiba.eps -raster=jpg -dpi=600
+        perl eps2raster.pl -a -raster=png_transparent,jpg -dpi=200 -nofm
+
+    REQUIREMENTS
+        Perl 5, Ghostscript
+
+    SEE ALSO
+        perl(1), gs(1)
+
+    AUTHOR
+        Jaewoong Jang <jang.comsci@gmail.com>
+
+    COPYRIGHT
+        Copyright (c) 2018 Jaewoong Jang
+
+    LICENSE
+        This software is available under the MIT license;
+        the license information is found in 'LICENSE'.

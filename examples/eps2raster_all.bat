@@ -1,0 +1,1 @@
+perl eps2raster.pl -a -raster=png,png_transparent,jpg -dpi=400
