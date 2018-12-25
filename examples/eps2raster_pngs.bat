@@ -1,1 +1,0 @@
-perl eps2raster.pl escher.ps -raster=png,png_transparent -dpi=400
