@@ -1,0 +1,1 @@
+perl eps2img.pl ./examples/escher.ps -o=png,png_trn -raster_dpi=400

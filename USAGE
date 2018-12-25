@@ -1,45 +1,51 @@
     NAME
-        eps2raster - Rasterize PS/EPS files
+        eps2img - Convert PS/EPS files to raster and vector images
 
     SYNOPSIS
-        perl eps2raster.pl [file ...|-a] [-raster=format ...] [-dpi=int]
-                           [-nofm] [-nopause]
+        perl eps2img.pl [file ...|-all] [-out=format ...] [-raster_dpi=int]
+                        [-nofm] [-nopause]
 
     DESCRIPTION
-        eps2raster lets the user easily convert PS/EPS files
-        to raster images using Ghostscript.
-        eps2raster interfaces Ghostscript via yet another interface
-        called Ghostscript.pm:
-            eps2raster.pl --- Ghostscript.pm --- Ghostscript
-        where the Ghostscript.pm is a Moose class that
-        the author has written for his Perl program called phitar.
+        eps2img wraps Ghostscript and Inkscape to ease
+        converting PS/EPS files to raster and vector images.
+        eps2img uses Image.pm, a custom module of the author:
+            eps2img.pl --- Image.pm --- Ghostscript, Inkscape
 
     OPTIONS
-        -a
+        -all|-a
             All PS/EPS files in the current working directory
-            are rasterized to the designated raster format.
-        -raster=format ...
-            Raster formats separated by the comma (,).
-            png (default)
-            png_transparent
+            are converted to the designated output formats.
+        -out|-o=format ...
+            Output formats separated by the comma (,).
+            all     (all formats below)
+            png     (default)
+            png_trn (transparent)
             jpg/jpeg
-        -dpi=int
-            Resolution. Default 300, sane range 100--600.
+            pdf
+            emf
+            wmf
+        -raster_dpi|-dpi=int
+            Raster (.png and .jpg) resolution.
+            Default 300, sane range 100--600.
         -nofm
             Do not show the front matter at the beginning of the program.
         -nopause
             Do not pause the shell at the end of the program.
 
     EXAMPLES
-        perl eps2raster.pl shibas.ps -dpi=400
-        perl eps2raster.pl kuro_shiba.eps mame_shiba.eps -raster=jpg -dpi=600
-        perl eps2raster.pl -a -raster=png_transparent,jpg -dpi=200 -nofm
+        perl eps2img.pl ./examples/tiger.ps -raster_dpi=400
+        perl eps2img.pl kuro_shiba.eps mame_shiba.eps -o=jpg -raster_dpi=600
+        perl eps2img.pl -a -o=png_trn,jpg -raster_dpi=200 -nofm
+        perl eps2img.pl -a -o=all
 
     REQUIREMENTS
-        Perl 5, Ghostscript
+        Perl 5
+            Moose, namespace::autoclean
+        Ghostscript, Inkscape
 
     SEE ALSO
-        perl(1), gs(1)
+        perl(1), moose(3),
+        gs(1), inkscape(1)
 
     AUTHOR
         Jaewoong Jang <jang.comsci@gmail.com>
