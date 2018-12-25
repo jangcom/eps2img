@@ -51,7 +51,7 @@ my %prog_info = (
     DESCRIPTION
         eps2img wraps Ghostscript and Inkscape to ease
         converting PS/EPS files to raster and vector images.
-        eps2img uses Image.pm, a custom module of the author:
+        eps2img uses Image.pm, a Moose class written by the author:
             eps2img.pl --- Image.pm --- Ghostscript, Inkscape
 
     OPTIONS
