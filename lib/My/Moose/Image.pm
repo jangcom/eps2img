@@ -415,9 +415,9 @@ sub convert {
         say $self->Cmt->borders->{'='};
         printf(
             "%s [%s] converting\n".
-            "%s the PS images using [%s]...\n",
+            "%s the PS image%s using [%s]...\n",
             $self->Cmt->symb, join('::', (caller(0))[0, 3]),
-            $self->Cmt->symb, (
+            $self->Cmt->symb, $fname_flag_pairs[1] ? 's' : '', (
                 $has_been_used{gs_and_inkscape} == 2 ?
                     $self->exes->{gs}.' and '.$self->exes->{inkscape} :
                 $has_been_used{gs}       ? $self->exes->{gs} :
@@ -463,11 +463,11 @@ sub convert {
             #     and remove numbers.
             #
             # For example, if the .eps filename was
-            # 'w_rcc-vhgt0p10-frad1p00-fgap0p15-track-xz.eps',
+            # 'wrcc-vhgt0p10-frad1p00-fgap0p15-track-xz.eps',
             # slicing the filename by $fname_sep with the indices of [0..3]
-            # will result in 'w_rcc-vhgt0p10-frad1p00-fgap0p15'.
+            # will result in 'wrcc-vhgt0p10-frad1p00-fgap0p15'.
             # When the numbers followed by the geometry strings are removed,
-            # the directory name will be '.\w_rcc-vhgt-frad-fgap'.
+            # the directory name will be '.\wrcc-vhgt-frad-fgap'.
             #
             # For TRC molybdenum target, we need one more geometry var, thus
             # the indices should be from 0 to 4. For example,
@@ -487,7 +487,7 @@ sub convert {
             # (2) Append the tally flag to the directory name.
             #
             # If the tally flag was '-track-xz', the above dir name will be:
-            # '.\w_rcc-vhgt-frad-fgap-track-xz'.
+            # '.\wrcc-vhgt-frad-fgap-track-xz'.
             $out_dir .= $pair->[1];
             
             #
