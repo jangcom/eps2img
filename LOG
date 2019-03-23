@@ -1,0 +1,3 @@
+v1.02
+- Source code reorganized
+- Fonts are now embedded in the pdfwrite device
