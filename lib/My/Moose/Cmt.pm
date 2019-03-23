@@ -1,7 +1,7 @@
 #
 # Moose role for commenting
 #
-# Copyright (c) 2018 Jaewoong Jang
+# Copyright (c) 2018-2019 Jaewoong Jang
 # This script is available under the MIT license;
 # the license information is found in 'LICENSE'.
 #
@@ -9,6 +9,11 @@ package My::Moose::Cmt;
 
 use Moose::Role;
 use namespace::autoclean;
+
+our $PACKNAME = __PACKAGE__;
+our $VERSION  = '1.00';
+our $LAST     = '2019-03-23';
+our $FIRST    = '2018-08-18';
 
 #
 # Abbreviations
@@ -66,6 +71,8 @@ sub set_borders_len {
         leading_symb => $self->borders_tmp->{leading_symb},
         border_symbs => $self->borders_tmp->{border_symbs}
     );
+    
+    return;
 }
 
 has $_ => ( 
@@ -90,6 +97,9 @@ sub set_borders {
             $self->borders_tmp->{leading_symb}.
             ($symb x ($self->borders_len - 1)); # -1: the leading symb
     }
+    
+    return;
 }
 
 1;
+__END__

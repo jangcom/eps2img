@@ -1,7 +1,7 @@
 #
 # Moose class for Image
 #
-# Copyright (c) 2018 Jaewoong Jang
+# Copyright (c) 2018-2019 Jaewoong Jang
 # This script is available under the MIT license;
 # the license information is found in 'LICENSE'.
 #
@@ -12,6 +12,11 @@ use namespace::autoclean;
 use feature qw(say state);
 use constant ARRAY => ref [];
 use constant HASH  => ref {};
+
+our $PACKNAME = __PACKAGE__;
+our $VERSION  = '1.00';
+our $LAST     = '2019-03-23';
+our $FIRST    = '2018-08-19';
 
 has 'Cmt' => (
     is      => 'ro',
@@ -237,14 +242,26 @@ sub convert {
     # [Ghostscript] Output devices
     #
     
-    # [Ghostscript] Common command-line options
-    state $common_cmd_opts = sprintf(
+    # [Ghostscript] Command-line options for raster images
+    state $raster_cmd_opts = sprintf(
         "-dTextAlphaBits=%s".
         " -dGraphicsAlphaBits=%s".
         " -r%s",
         $self->Ctrls->text_alpha_bits,
         $self->Ctrls->graphics_alpha_bits,
         $self->Ctrls->raster_dpi
+    );
+    
+    # [Ghostscript] Command-line options for PostScript (mainly Distiller opts)
+    state $ps_cmd_opts = sprintf(
+        "-dPDFSETTINGS#/%s".
+        " -dMaxSubsetPct=%d".
+        " -dSubsetFonts=%s".
+        " -dEmbedAllFonts=%s",
+        $self->Ctrls->pdf_settings,
+        $self->Ctrls->max_subset_pct,
+        $self->Ctrls->subset_fonts,
+        $self->Ctrls->embed_all_fonts,
     );
     
     # [Ghostscript] Device parameters
@@ -257,7 +274,7 @@ sub convert {
                 "-sDEVICE=%s".
                 " %s",
                 $self->s_devices->{png16m},
-                $common_cmd_opts
+                $raster_cmd_opts,
             ),
         },
         png_trn => {
@@ -268,7 +285,7 @@ sub convert {
                 "-sDEVICE=%s".
                 " %s",
                 $self->s_devices->{pngalpha},
-                $common_cmd_opts
+                $raster_cmd_opts,
             ),
         },
         jpg => {
@@ -279,7 +296,7 @@ sub convert {
                 "-sDEVICE=%s".
                 " %s",
                 $self->s_devices->{jpg},
-                $common_cmd_opts
+                $raster_cmd_opts,
             ),
         },
         pdf => {
@@ -287,8 +304,10 @@ sub convert {
             fformat    => 'pdf',
             fname_flag => '',
             cmd_opts   => sprintf(
-                "-sDEVICE=%s",
-                $self->s_devices->{pdfwrite}
+                "-sDEVICE=%s".
+                " %s",
+                $self->s_devices->{pdfwrite},
+                $ps_cmd_opts,
             ),
         },
     };
@@ -628,6 +647,8 @@ sub convert {
     
     # Remove duplicated to-be-animated paths (for ImageMagick and FFmpeg).
     @{$self->rasters_dirs} = $self->uniq_rasters_dirs;
+    
+    return;
 }
 
 __PACKAGE__->meta->make_immutable;
@@ -682,6 +703,64 @@ has $_ => (
     writer  => 'set_'.$_,
 ) for keys %_rasterization_params;
 
+#
+# Adobe Distiller parameters (mainly for the pdfwrite device)
+#
+my %_distiller_params = (
+    # References
+    # [1] epstopdf.pl
+    #     https://ctan.org/pkg/epstopdf?lang=en
+    # [2] SO
+    #     https://superuser.com/questions/435410/
+    #     where-are-ghostscript-options-switches-documented
+    
+    # dPDFSETTINGS
+    # Presets the "distiller parameters" to one of four predefined settings:
+    # [/screen]   selects low-resolution output similar to
+    #             the Acrobat Distiller "Screen Optimized" setting.
+    # [/ebook]    selects medium-resolution output similar to
+    #             the Acrobat Distiller "eBook" setting.
+    # [/printer]  selects output similar to
+    #             the Acrobat Distiller "Print Optimized" setting.
+    # [/prepress] selects output similar to
+    #             Acrobat Distiller "Prepress Optimized" setting.
+    # [/default]  selects output intended to be useful across a wide variety
+    #             of uses, possibly at the expense of a larger output file.
+    pdf_settings => 'prepress',
+    
+    # dMaxSubsetPct
+    # An Acrobat Distiller 5 parameter
+    # Type: integer
+    # UI name: Subset embedded fonts when percent of characters used
+    #          is less than: value %
+    # Default value: 100
+    # 
+    # The maximum percentage of glyphs in a font that can be used
+    # before the entire font is embedded instead of a subset.
+    # The allowable range is 1 through 100.
+    # 
+    # Distiller only uses this value if SubsetFonts is true.
+    # For example, a value of 30 means that a font will be
+    # embedded in full (not subset) if more than 30% of glyphs are used;
+    # a value of 100 means all fonts will be subset no matter how many glyphs
+    # are used (because you cannot use more than 100% of glyphs).
+    max_subset_pct => 100,
+    
+    # dSubsetFonts
+    subset_fonts => 'true',
+    
+    # dEmbedAllFonts
+    embed_all_fonts => 'true',
+);
+
+has $_ => (
+    is      => 'ro',
+    isa     => 'Int|Str',
+    lazy    => 1,
+    default => $_distiller_params{$_},
+    writer  => 'set_'.$_,
+) for keys %_distiller_params;
+
 # Additional switches
 my %_additional_switches = (
     # Ghostscript
@@ -718,3 +797,4 @@ with 'My::Moose::FileIO';
 
 __PACKAGE__->meta->make_immutable;
 1;
+__END__

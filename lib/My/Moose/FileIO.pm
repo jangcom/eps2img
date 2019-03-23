@@ -1,7 +1,7 @@
 #
 # Moose role for file I/O
 #
-# Copyright (c) 2018 Jaewoong Jang
+# Copyright (c) 2018-2019 Jaewoong Jang
 # This script is available under the MIT license;
 # the license information is found in 'LICENSE'.
 #
@@ -9,6 +9,11 @@ package My::Moose::FileIO;
 
 use Moose::Role;
 use namespace::autoclean;
+
+our $PACKNAME = __PACKAGE__;
+our $VERSION  = '1.00';
+our $LAST     = '2019-03-23';
+our $FIRST    = '2018-08-18';
 
 #
 # Note on delimiters and separators
@@ -46,6 +51,7 @@ my %_fname_elems = ( # (key) attribute => (val) default
     fname_ext_delim => '.',
     # Filename placeholders
     inp      => undef,
+    inp_dmp  => undef, # Input file generating a dump file
     out      => undef,
     tmp      => undef,
     dat      => undef,
@@ -77,7 +83,7 @@ has 'fname_exts' => (
 sub _build_fname_exts {
     return {
         # Common
-        tmp => 'tmp',
+        tmp => 'tmp', # Temporary
         exe => 'exe',
         bat => 'bat',
         
@@ -157,3 +163,4 @@ has $_ => (
 ) for keys %_platform_dependents;
 
 1;
+__END__
