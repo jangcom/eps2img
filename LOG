@@ -1,3 +1,7 @@
+v1.03
+- Module routines have been embedded in the source code;
+  the source code is now standalone.
+
 v1.02
 - Source code reorganized
 - Fonts are now embedded in the pdfwrite device
