@@ -1,1 +1,0 @@
-perl eps2img.pl ./examples/tiger.eps -o=wmf
