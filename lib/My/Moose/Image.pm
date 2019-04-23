@@ -14,8 +14,8 @@ use constant ARRAY => ref [];
 use constant HASH  => ref {};
 
 our $PACKNAME = __PACKAGE__;
-our $VERSION  = '1.00';
-our $LAST     = '2019-03-23';
+our $VERSION  = '1.01';
+our $LAST     = '2019-04-24';
 our $FIRST    = '2018-08-19';
 
 has 'Cmt' => (
@@ -90,6 +90,12 @@ my %_gs_cmd_opts = (
             quintet    => '-dSAFER -dBATCH -dNOPAUSE -dQUIET -dEPSCrop',
         }
     },
+    pdfversion => sub { # Added 2019-04-23
+        {
+            key => '-dCompatibilityLevel',
+            val => '1.4',
+        }
+    },
     paper_sizes => sub { # use.htm#Known_paper_sizess
         {
             usletter => 'letter', # 8.5" by 11.0"; the default
@@ -146,16 +152,16 @@ has 'inkscape_export' => (
     },
 );
 
-#
-# Convert PostScript files to raster and vector images.
-#
+
 sub convert {
+    # """Convert PostScript files to raster and vector images."""
+    
     #
     # Note on subroutine generalization
     #
     # 2018-08-23
-    # > Initially created for "phitar.pl", this routine has now been generalized.
-    #   Use "eps2img.pl" for rasterizing PS/EPS files.
+    # > Initially created for phitar, this routine has now been generalized.
+    #   Use eps2img for rasterizing PS/EPS files.
     #
     # 2018-12-24
     # > Class name changed: Ghostscript.pm --> Image.pm
@@ -170,9 +176,9 @@ sub convert {
     my @your_args;        # User-provided arguments
     my %phitar_flags;     # phitar-only: flags for naming subdirs
     foreach (@_) {
-        push @fname_flag_pairs,    $_ if     ref $_ eq ARRAY;
-        push @your_args,           $_ if not ref $_ eq ARRAY;
-        %phitar_flags = %{$_}         if     ref $_ eq HASH;
+        push @fname_flag_pairs, $_ if     ref $_ eq ARRAY;
+        push @your_args,        $_ if not ref $_ eq ARRAY;
+        %phitar_flags = %{$_}      if     ref $_ eq HASH;
     }
     my($bname, $out_dir);            # Used for directory naming (phitar)
     my($converted_fname, $ps_fname); # Storages of an output and an input
@@ -191,10 +197,12 @@ sub convert {
         $self->Ctrls->set_png_trn_switch('on')       if /^(png_trn|all)$/i;
         $self->Ctrls->set_jpg_switch('on')           if /^(jpe?g|all)$/i;
         $self->Ctrls->set_pdf_switch('on')           if /^(pdf|all)$/i;
-        $has_been_used{gs} = 1 if $self->Ctrls->png_switch     =~ /on/i;
-        $has_been_used{gs} = 1 if $self->Ctrls->png_trn_switch =~ /on/i;
-        $has_been_used{gs} = 1 if $self->Ctrls->jpg_switch     =~ /on/i;
-        $has_been_used{gs} = 1 if $self->Ctrls->pdf_switch     =~ /on/i;
+        $has_been_used{gs} = 1 if(
+            $self->Ctrls->png_switch        =~ /on/i
+            or $self->Ctrls->png_trn_switch =~ /on/i
+            or $self->Ctrls->jpg_switch     =~ /on/i
+            or $self->Ctrls->pdf_switch     =~ /on/i
+        );
         
         push @your_interaction_params,
             $self->interaction_params->{quiet}      if /^quiet$/i;
@@ -202,6 +210,14 @@ sub convert {
             $self->interaction_params->{epscrop}    if /^epscrop$/i;
         push @your_interaction_params,
             $self->interaction_params->{epsfitpage} if /^epsfitpage$/i;
+        if (/^pdfversion\s*=\s*/i) {
+            ($self->pdfversion->{val} = $_) =~ s/pdfversion\s*=\s*//;
+            push @your_interaction_params, sprintf(
+                "%s=%s",
+                $self->pdfversion->{key},
+                $self->pdfversion->{val},
+            );
+        }
         
         $is_rotate     = 1 if /^rotate$/i;
         $is_multipaged = 1 if /^multipaged$/i;
@@ -598,11 +614,15 @@ sub convert {
                 
                 # Notify the completion.
                 $k =~ /pdf/i ? printf(
-                    "[%s] --> %s converted.\n",
-                    $ps_fname, "\U$k"
+                    "[%s] --> %s (v%s) converted.\n",
+                    $ps_fname,
+                    "\U$k",
+                    $self->pdfversion->{val},
                 ) : printf(
                     "[%s] --> %s rasterized. (DPI: %s)\n",
-                    $ps_fname, "\U$k", $self->Ctrls->raster_dpi
+                    $ps_fname,
+                    "\U$k",
+                    $self->Ctrls->raster_dpi,
                 );
             }
             

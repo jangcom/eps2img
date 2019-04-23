@@ -12,7 +12,7 @@ use namespace::autoclean;
 
 our $PACKNAME = __PACKAGE__;
 our $VERSION  = '1.00';
-our $LAST     = '2019-03-23';
+our $LAST     = '2019-04-18';
 our $FIRST    = '2018-08-18';
 
 #
@@ -60,7 +60,6 @@ my %_fname_elems = ( # (key) attribute => (val) default
     dir       => undef,
     subdir    => undef,
     subsubdir => undef,
-    rpt_dir   => undef,
 );
 
 has $_ => (

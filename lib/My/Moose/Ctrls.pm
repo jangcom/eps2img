@@ -55,13 +55,17 @@ has 'is_first_run' => (
 
 sub set_is_first_run {
     my $self = shift;
+    
     $self->is_first_run($_[0]) if defined $_[0];
+    
     return;
 };
 
 sub init_is_first_run {
     my $self = shift;
+    
     $self->is_first_run(1);
+    
     return;
 };
 
