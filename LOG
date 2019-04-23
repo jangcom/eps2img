@@ -1,6 +1,9 @@
-v1.03
-- Toolset.pm routines have been embedded in the source code.
+v1.04 (2019-04-24)
+- The version of converted PDF files can now be specified via the cmd-line opt.
 
-v1.02
+v1.03 (2019-03-26)
+- Routines of Toolset.pm have been embedded in the source code.
+
+v1.02 (2019-03-23)
 - Source code reorganized
 - Fonts are now embedded in the pdfwrite device

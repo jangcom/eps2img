@@ -3,7 +3,7 @@ NAME
 
 SYNOPSIS
         perl eps2img.pl [ps_file ...|-all] [-out=format ...] [-raster_dpi=int]
-                        [-nofm] [-nopause]
+                        [-pdfversion=version] [-nofm] [-nopause]
 
 DESCRIPTION
         eps2img wraps Ghostscript and Inkscape to ease
@@ -35,6 +35,10 @@ OPTIONS
             Raster (.png and .jpg) resolution.
             Default 300, sane range 100--600.
 
+        -pdfversion=version (-short form: -pdf, default: 1.4)
+            The version of converted PDF files. The available version
+            is subject to your Ghostscript version.
+
         -nofm
             The front matter will not be displayed at the beginning of the program.
 
@@ -43,10 +47,10 @@ OPTIONS
             Use it for a batch run.
 
 EXAMPLES
-        perl eps2img.pl ./examples/tiger.ps -raster_dpi=400
         perl eps2img.pl kuro_shiba.eps mame_shiba.eps -o=jpg -raster_dpi=600
         perl eps2img.pl -a -o=png_trn,jpg -raster_dpi=200 -nofm
         perl eps2img.pl -a -o=all
+        perl eps2img.pl ./samples/tiger.eps -o=pdf -pdf=1.7
 
 REQUIREMENTS
         Perl 5
@@ -54,7 +58,7 @@ REQUIREMENTS
         Ghostscript, Inkscape
 
 SEE ALSO
-    perl(1), moose(3), gs(1), inkscape(1)
+    eps2img on GitHub <https://github.com/jangcom/eps2img>
 
 AUTHOR
     Jaewoong Jang <jan9@korea.ac.kr>

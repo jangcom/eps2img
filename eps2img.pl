@@ -1,28 +1,29 @@
 #!/usr/bin/perl
 use strict;
 use warnings;
+use autodie;
 use utf8;
-use autodie        qw(open close);
-use feature        qw(say);
+use Carp qw(croak);
+use DateTime;
+use feature qw(say);
 use File::Basename qw(basename);
-use Carp           qw(croak);
-use constant ARRAY  => ref [];
-use constant HASH   => ref {};
+use constant ARRAY => ref [];
+use constant HASH  => ref {};
 BEGIN { unshift @INC, "./lib"; } # @INC's become dotless since v5.26000
 use My::Moose::Image;
 
 
-our $VERSION = '1.03';
-our $LAST    = '2019-03-26';
+our $VERSION = '1.04';
+our $LAST    = '2019-04-24';
 our $FIRST   = '2018-08-23';
 
 
 #----------------------------------My::Toolset----------------------------------
 sub show_front_matter {
     # """Display the front matter."""
-    my $sub_name = join('::', (caller(0))[0, 3]);
     
     my $prog_info_href = shift;
+    my $sub_name = join('::', (caller(0))[0, 3]);
     croak "The 1st arg of [$sub_name] must be a hash ref!"
         unless ref $prog_info_href eq HASH;
     
@@ -36,7 +37,7 @@ sub show_front_matter {
         $is_no_newline,
         $is_copy,
     );
-    my $lead_symb    = '';
+    my $lead_symb = '';
     foreach (@_) {
         $is_prog                = 1  if /prog/i;
         $is_auth                = 1  if /auth/i;
@@ -91,7 +92,7 @@ sub show_front_matter {
             "%sCurrent time: %s%s",
             ($lead_symb ? $lead_symb.' ' : $lead_symb),
             $datetimes{ymdhms},
-            $newline
+            $newline,
         );
     }
     
@@ -102,7 +103,7 @@ sub show_front_matter {
             "%s%s%s",
             ($lead_symb ? $lead_symb.' ' : $lead_symb),
             $prog_info_href->{auth}{$_},
-            $newline
+            $newline,
         ) for qw(name posi affi mail);
     }
     
@@ -137,11 +138,10 @@ sub show_front_matter {
 
 sub validate_argv {
     # """Validate @ARGV against %cmd_opts."""
-    my $sub_name = join('::', (caller(0))[0, 3]);
     
     my $argv_aref     = shift;
     my $cmd_opts_href = shift;
-    
+    my $sub_name = join('::', (caller(0))[0, 3]);
     croak "The 1st arg of [$sub_name] must be an array ref!"
         unless ref $argv_aref eq ARRAY;
     croak "The 2nd arg of [$sub_name] must be a hash ref!"
@@ -258,12 +258,46 @@ sub pause_shell {
 }
 
 
+sub construct_timestamps {
+    # """Construct timestamps."""
+    
+    # Optional setting for the date component separator
+    my $date_sep  = '';
+    
+    # Terminate the program if the argument passed
+    # is not allowed to be a delimiter.
+    my @delims = ('-', '_');
+    if ($_[0]) {
+        $date_sep = $_[0];
+        my $is_correct_delim = grep $date_sep eq $_, @delims;
+        croak "The date delimiter must be one of: [".join(', ', @delims)."]"
+            unless $is_correct_delim;
+    }
+    
+    # Construct and return a datetime hash.
+    my $dt  = DateTime->now(time_zone => 'local');
+    my $ymd = $dt->ymd($date_sep);
+    my $hms = $dt->hms($date_sep ? ':' : '');
+    (my $hm = $hms) =~ s/[0-9]{2}$//;
+    
+    my %datetimes = (
+        none   => '', # Used for timestamp suppressing
+        ymd    => $ymd,
+        hms    => $hms,
+        hm     => $hm,
+        ymdhms => sprintf("%s%s%s", $ymd, ($date_sep ? ' ' : '_'), $hms),
+        ymdhm  => sprintf("%s%s%s", $ymd, ($date_sep ? ' ' : '_'), $hm),
+    );
+    
+    return %datetimes;
+}
+
+
 sub rm_duplicates {
     # """Remove duplicate items from an array."""
-    my $sub_name = join('::', (caller(0))[0, 3]);
     
     my $aref = shift;
-    
+    my $sub_name = join('::', (caller(0))[0, 3]);
     croak "The 1st arg of [$sub_name] must be an array ref!"
         unless ref $aref eq ARRAY;
     
@@ -310,6 +344,19 @@ sub parse_argv {
             ($run_opts_href->{raster_dpi} = $_) =~ s/$cmd_opts{raster_dpi}//i;
         }
         
+        # To-be-converted PDF version
+        if (/$cmd_opts{pdfversion}/i) {
+            s/$cmd_opts{pdfversion}//i;
+            unless (/\b1[.][0-9]\b/) {
+                printf(
+                    "Incorrect pdfversion; defaulting to [%s].\n\n",
+                    $run_opts_href->{pdfversion},
+                );
+                next;
+            }
+            $run_opts_href->{pdfversion} = $_;
+        }
+        
         # The front matter won't be displayed at the beginning of the program.
         if (/$cmd_opts{nofm}/) {
             $run_opts_href->{is_nofm} = 1;
@@ -333,6 +380,10 @@ sub convert_images {
     my $image = Image->new();
     
     # Notification
+    if (not @{$run_opts_href->{ps_fnames}}) {
+        print "No PS/EPS file found.\n";
+        return;
+    }
     printf(
         "The following PS/EPS file%s will be converted:\n",
         $run_opts_href->{ps_fnames}[1] ? 's' : ''
@@ -347,6 +398,7 @@ sub convert_images {
             [$ps, ''],
             'quiet',
             'epscrop',
+            'pdfversion='.$run_opts_href->{pdfversion},
         );
     }
     
@@ -372,34 +424,37 @@ sub eps2img {
             },
         );
         my %cmd_opts = ( # Command-line opts
-            ps_all     => qr/-?-a(ll)?/i,
+            ps_all     => qr/-?-a(ll)?\b/i,
             out_fmts   => qr/-?-o(ut)?\s*=\s*/i,
             raster_dpi => qr/-?-(raster_)?dpi\s*=\s*/i,
-            nofm       => qr/-?-nofm/i,
-            nopause    => qr/-?-nopause/i,
+            pdfversion => qr/-?-pdf(?:version)?\s*=\s*/,
+            nofm       => qr/-?-nofm\b/i,
+            nopause    => qr/-?-nopause\b/i,
         );
         my %run_opts = ( # Program run opts
             ps_fnames  => [],
             out_fmts   => ['png'],
             raster_dpi => 300,
+            pdfversion => '1.4',
             is_nofm    => 0,
             is_nopause => 0,
         );
         
+        # Notification - beginning
+        show_front_matter(\%prog_info, 'prog', 'auth')
+            unless $run_opts{is_nofm};
+        
         # ARGV validation and parsing
         validate_argv(\@ARGV, \%cmd_opts);
         parse_argv(\@ARGV, \%cmd_opts, \%run_opts);
-        
-        # Notification - beginning
-        show_front_matter(\%prog_info, 'prog', 'auth', 'no_trailing_blkline')
-            unless $run_opts{is_nofm};
         
         # Main
         convert_images(\%run_opts);
         
         # Notification - end
         show_elapsed_real_time("\n");
-        pause_shell() unless $run_opts{is_nopause};
+        pause_shell()
+            unless $run_opts{is_nopause};
     }
     
     system("perldoc \"$0\"") if not @ARGV;
@@ -418,7 +473,7 @@ eps2img - Convert PS/EPS files to raster and vector images
 =head1 SYNOPSIS
 
     perl eps2img.pl [ps_file ...|-all] [-out=format ...] [-raster_dpi=int]
-                    [-nofm] [-nopause]
+                    [-pdfversion=version] [-nofm] [-nopause]
 
 =head1 DESCRIPTION
 
@@ -452,6 +507,10 @@ eps2img - Convert PS/EPS files to raster and vector images
         Raster (.png and .jpg) resolution.
         Default 300, sane range 100--600.
 
+    -pdfversion=version (-short form: -pdf, default: 1.4)
+        The version of converted PDF files. The available version
+        is subject to your Ghostscript version.
+
     -nofm
         The front matter will not be displayed at the beginning of the program.
 
@@ -461,10 +520,10 @@ eps2img - Convert PS/EPS files to raster and vector images
 
 =head1 EXAMPLES
 
-    perl eps2img.pl ./examples/tiger.ps -raster_dpi=400
     perl eps2img.pl kuro_shiba.eps mame_shiba.eps -o=jpg -raster_dpi=600
     perl eps2img.pl -a -o=png_trn,jpg -raster_dpi=200 -nofm
     perl eps2img.pl -a -o=all
+    perl eps2img.pl ./samples/tiger.eps -o=pdf -pdf=1.7
 
 =head1 REQUIREMENTS
 
@@ -474,7 +533,7 @@ eps2img - Convert PS/EPS files to raster and vector images
 
 =head1 SEE ALSO
 
-perl(1), moose(3), gs(1), inkscape(1)
+L<eps2img on GitHub|https://github.com/jangcom/eps2img>
 
 =head1 AUTHOR
 
