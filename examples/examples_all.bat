@@ -1,1 +1,0 @@
-perl -I ../lib ../eps2img.pl -a -o=all -raster_dpi=400
