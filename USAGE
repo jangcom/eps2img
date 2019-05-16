@@ -3,13 +3,16 @@ NAME
 
 SYNOPSIS
         perl eps2img.pl [ps_file ...|-all] [-out=format ...] [-raster_dpi=int]
-                        [-pdfversion=version] [-nofm] [-nopause]
+                        [-pdfversion=version] [-nocrop] [-nofm] [-nopause]
 
 DESCRIPTION
         eps2img wraps Ghostscript and Inkscape to ease
         converting PS/EPS files to raster and vector images.
         eps2img uses Image.pm, a Moose class written by the author:
             eps2img.pl --- Image.pm --- Ghostscript, Inkscape
+
+        If you want to animate the rasterized images, consider using img2ani,
+        a sister program written by the author. See "SEE ALSO" below.
 
 OPTIONS
         ps_file ...
@@ -39,6 +42,9 @@ OPTIONS
             The version of converted PDF files. The available version
             is subject to your Ghostscript version.
 
+        -nocrop
+            EPS files will not be cropped when rasterized.
+
         -nofm
             The front matter will not be displayed at the beginning of the program.
 
@@ -60,8 +66,11 @@ REQUIREMENTS
 SEE ALSO
     eps2img on GitHub <https://github.com/jangcom/eps2img>
 
+    Want to animate the rasterized images? Check out the sister program:
+    img2ani on GitHub <https://github.com/jangcom/img2ani>
+
 AUTHOR
-    Jaewoong Jang <jan9@korea.ac.kr>
+    Jaewoong Jang <jangj@korea.ac.kr>
 
 COPYRIGHT
     Copyright (c) 2018-2019 Jaewoong Jang

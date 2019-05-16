@@ -13,8 +13,8 @@ BEGIN { unshift @INC, "./lib"; } # @INC's become dotless since v5.26000
 use My::Moose::Image;
 
 
-our $VERSION = '1.04';
-our $LAST    = '2019-04-24';
+our $VERSION = '1.05';
+our $LAST    = '2019-05-16';
 our $FIRST   = '2018-08-23';
 
 
@@ -357,6 +357,11 @@ sub parse_argv {
             $run_opts_href->{pdfversion} = $_;
         }
         
+        # -dEPSCrop will not be used.
+        if (/$cmd_opts{nocrop}/) {
+            $run_opts_href->{is_nocrop} = 1;
+        }
+        
         # The front matter won't be displayed at the beginning of the program.
         if (/$cmd_opts{nofm}/) {
             $run_opts_href->{is_nofm} = 1;
@@ -397,7 +402,7 @@ sub convert_images {
             @{$run_opts_href->{out_fmts}}, # Elements as separate args
             [$ps, ''],
             'quiet',
-            'epscrop',
+            $run_opts_href->{is_nocrop} ? '' : 'epscrop',
             'pdfversion='.$run_opts_href->{pdfversion},
         );
     }
@@ -420,7 +425,7 @@ sub eps2img {
                 name => 'Jaewoong Jang',
                 posi => 'PhD student',
                 affi => 'University of Tokyo',
-                mail => 'jan9@korea.ac.kr',
+                mail => 'jangj@korea.ac.kr',
             },
         );
         my %cmd_opts = ( # Command-line opts
@@ -428,6 +433,7 @@ sub eps2img {
             out_fmts   => qr/-?-o(ut)?\s*=\s*/i,
             raster_dpi => qr/-?-(raster_)?dpi\s*=\s*/i,
             pdfversion => qr/-?-pdf(?:version)?\s*=\s*/,
+            nocrop     => qr/-?-nocrop\b/i,
             nofm       => qr/-?-nofm\b/i,
             nopause    => qr/-?-nopause\b/i,
         );
@@ -436,17 +442,18 @@ sub eps2img {
             out_fmts   => ['png'],
             raster_dpi => 300,
             pdfversion => '1.4',
+            is_nocrop  => 0,
             is_nofm    => 0,
             is_nopause => 0,
         );
         
-        # Notification - beginning
-        show_front_matter(\%prog_info, 'prog', 'auth')
-            unless $run_opts{is_nofm};
-        
         # ARGV validation and parsing
         validate_argv(\@ARGV, \%cmd_opts);
         parse_argv(\@ARGV, \%cmd_opts, \%run_opts);
+        
+        # Notification - beginning
+        show_front_matter(\%prog_info, 'prog', 'auth')
+            unless $run_opts{is_nofm};
         
         # Main
         convert_images(\%run_opts);
@@ -473,7 +480,7 @@ eps2img - Convert PS/EPS files to raster and vector images
 =head1 SYNOPSIS
 
     perl eps2img.pl [ps_file ...|-all] [-out=format ...] [-raster_dpi=int]
-                    [-pdfversion=version] [-nofm] [-nopause]
+                    [-pdfversion=version] [-nocrop] [-nofm] [-nopause]
 
 =head1 DESCRIPTION
 
@@ -481,6 +488,9 @@ eps2img - Convert PS/EPS files to raster and vector images
     converting PS/EPS files to raster and vector images.
     eps2img uses Image.pm, a Moose class written by the author:
         eps2img.pl --- Image.pm --- Ghostscript, Inkscape
+
+    If you want to animate the rasterized images, consider using img2ani,
+    a sister program written by the author. See "SEE ALSO" below.
 
 =head1 OPTIONS
 
@@ -511,6 +521,9 @@ eps2img - Convert PS/EPS files to raster and vector images
         The version of converted PDF files. The available version
         is subject to your Ghostscript version.
 
+    -nocrop
+        EPS files will not be cropped when rasterized.
+
     -nofm
         The front matter will not be displayed at the beginning of the program.
 
@@ -535,9 +548,12 @@ eps2img - Convert PS/EPS files to raster and vector images
 
 L<eps2img on GitHub|https://github.com/jangcom/eps2img>
 
+Want to animate the rasterized images? Check out the sister program:
+L<img2ani on GitHub|https://github.com/jangcom/img2ani>
+
 =head1 AUTHOR
 
-Jaewoong Jang <jan9@korea.ac.kr>
+Jaewoong Jang <jangj@korea.ac.kr>
 
 =head1 COPYRIGHT
 
