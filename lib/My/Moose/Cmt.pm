@@ -12,11 +12,11 @@ use namespace::autoclean;
 
 our $PACKNAME = __PACKAGE__;
 our $VERSION  = '1.00';
-our $LAST     = '2019-03-23';
+our $LAST     = '2019-05-11';
 our $FIRST    = '2018-08-18';
 
 #
-# Abbreviations
+# Abbreviations and full names
 #
 has 'abbrs' => (
     traits  => ['Hash'],
@@ -31,11 +31,33 @@ has 'abbrs' => (
 
 sub _build_abbr {
     return {
-        energy => ['energy', 'eng'], # eng is the axis name of energy in PHITS
-        height => ['height', 'hgt'],
-        radius => ['radius', 'rad'],
-        bottom => ['bottom', 'bot'],
-        gap    => ['gap',    'gap'],
+        energy => ['energy' => 'eng'], # eng is the axis name of energy in PHITS
+        height => ['height' => 'hgt'],
+        radius => ['radius' => 'rad'],
+        bottom => ['bottom' => 'bot'],
+        gap    => ['gap'    => 'gap'],
+    };
+}
+
+has 'full_names' => (
+    traits  => ['Hash'],
+    is      => 'ro',
+    isa     => 'HashRef',
+    lazy    => 1,
+    builder => '_build_full_names',
+    handles => {
+        set_full_names => 'set',
+    },
+);
+
+sub _build_full_names {
+    return {
+        eng => 'energy',
+        nrg => 'energy',
+        hgt => 'height',
+        rad => 'radius',
+        bot => 'bottom',
+        gap => 'gap',
     };
 }
 

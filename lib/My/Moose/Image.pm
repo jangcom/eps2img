@@ -9,13 +9,15 @@ package Image;
 
 use Moose;
 use namespace::autoclean;
+use autodie;
 use feature qw(say state);
+use List::Util qw(first);
 use constant ARRAY => ref [];
 use constant HASH  => ref {};
 
 our $PACKNAME = __PACKAGE__;
-our $VERSION  = '1.01';
-our $LAST     = '2019-04-24';
+our $VERSION  = '1.02';
+our $LAST     = '2019-05-15';
 our $FIRST    = '2018-08-19';
 
 has 'Cmt' => (
@@ -84,6 +86,7 @@ my %_gs_cmd_opts = (
             quiet      => '-dQUIET',
             epscrop    => '-dEPSCrop',
             epsfitpage => '-dEPSFitPage',
+            usecropbox => '-dUseCropBox',
             # Combos
             trio       => '-dSAFER -dBATCH -dNOPAUSE',
             quartet    => '-dSAFER -dBATCH -dNOPAUSE -dQUIET',
@@ -115,6 +118,8 @@ my %_gs_cmd_opts = (
             # II. High level formats
             # I-1. Portable Document Format (PDF)
             pdfwrite => 'pdfwrite',
+            # III. Misc.
+            bbox     => 'bbox', # Read in bbox info
         }
     },
 );
@@ -174,11 +179,11 @@ sub convert {
     # Determine the roles of passed arguments.
     my @fname_flag_pairs; # Pairs of a PS/EPS filename and an optional flag
     my @your_args;        # User-provided arguments
-    my %phitar_flags;     # phitar-only: flags for naming subdirs
+    my %phitar_hooks;     # phitar-only
     foreach (@_) {
         push @fname_flag_pairs, $_ if     ref $_ eq ARRAY;
         push @your_args,        $_ if not ref $_ eq ARRAY;
-        %phitar_flags = %{$_}      if     ref $_ eq HASH;
+        %phitar_hooks = %{$_}      if     ref $_ eq HASH;
     }
     my($bname, $out_dir);            # Used for directory naming (phitar)
     my($converted_fname, $ps_fname); # Storages of an output and an input
@@ -186,8 +191,8 @@ sub convert {
     
     # Routine execution options - General
     my @your_interaction_params;
-    my $is_rotate     = 0;
-    my $is_multipaged = 0;
+    my $is_rotate    = 0;
+    my $is_multipage = 0;
     foreach (@your_args) {
         #
         # Ghostscript
@@ -218,9 +223,7 @@ sub convert {
                 $self->pdfversion->{val},
             );
         }
-        
-        $is_rotate     = 1 if /^rotate$/i;
-        $is_multipaged = 1 if /^multipaged$/i;
+        $is_rotate = 1 if /^rotate$/i;
         
         #
         # Inkscape
@@ -236,17 +239,31 @@ sub convert {
     # [Ghostscript] Execution options - "phitar" only
     my $is_phitar  = 0;
     $is_phitar     = 1 if (split /\/|\\/, (caller)[1])[-1] =~ /phitar([.]pl)?/i;
-    $is_rotate     = 1 if $is_phitar;
-    $is_multipaged = 1 if $is_phitar; # ANGEL-generated .eps files are actually
-                                      # mulitpage PS files!
+    $is_rotate     = 1 if (
+        $is_phitar
+        and $phitar_hooks{orientation}
+        and $phitar_hooks{orientation} =~ /\bland\b/i
+    );
     
     #
     # [Ghostscript] Storages for command-line execution
     #
     my($other_than_the_trio, $the_cmd);
-    $other_than_the_trio = ($is_phitar and $self->Ctrls->mute =~ /on/i) ?
-        $self->interaction_params->{quiet} :
-        "@your_interaction_params";
+    if ($is_phitar) {
+        $other_than_the_trio = sprintf(
+            "%s%s",
+            # -dUseCropBox is necessary to crop the whitespace of
+            # images rasterized from ANGEL-generated PS files.
+            # https://stackoverflow.com/questions/
+            # 38171343/ghostscript-converting-pdf-to-png-with-wrong-output-size
+            $self->interaction_params->{usecropbox},
+            $self->Ctrls->mute =~ /on/i ?
+                ' '.$self->interaction_params->{quiet} : '',
+        );
+    }
+    else {
+        $other_than_the_trio = "@your_interaction_params";
+    }
     
     # For regexes
     my $fname_sep     = $self->FileIO->fname_sep;
@@ -572,7 +589,130 @@ sub convert {
             #   use.htm#General_switches
             # > Iterate over the "Ghostscript output devices".
             #
-            foreach my $k (keys %{$gs_out_devices}) {
+            
+            # Determine if the PS file consists of more than one page.
+            open my $ps_fh, '<', $ps_fname;
+            my $num_pages = first {/^\s*%%Pages:\s*(?:[0-9]+)\s*/ix} <$ps_fh>;
+            close $ps_fh;
+            $num_pages =~ s/^\s*%%Pages:\s*([0-9]+)\s*/$1/ if $num_pages;
+            $is_multipage = ($num_pages and $num_pages >= 2) ? 1 : 0;
+            
+            # Preprocessing for multipage PS files
+            # > Mulitpage PS files cannot be cropped via the command -dEPSCrop.
+            #   The workaround is as follows:
+            #   (1) Obtain the bbox info using the bbox device of Ghostscript.
+            #   (2) Convert .eps to .pdf with "-dUseCropBox" used and using
+            #       the bbox info obtained at (1).
+            #   (3) Convert the cropped .pdf to .png, .jpg, ...
+            
+            # Initializations
+            my $is_pdfed = 0;
+            my $pdf_fname =
+                $out_dir.
+                ($is_phitar ? $self->FileIO->path_delim : '').
+                $bname.
+                $gs_out_devices->{pdf}{fname_flag}.
+                $self->FileIO->fname_ext_delim.
+                $self->FileIO->fname_exts->{$gs_out_devices->{pdf}{fformat}};
+            (my $pdf_fname_temp = $pdf_fname) =~ s/[.]pdf$/_.pdf/i;
+            
+            if ($is_multipage or $is_phitar) {
+                # (1) Obtain the bbox info.
+                $the_cmd = sprintf(
+                    "%s".
+                    " %s".
+                    " -sDEVICE=%s".
+                    " %s",
+                    $self->exes->{gs},
+                    $self->interaction_params->{quartet}, # trio + dQUIET
+                    $self->s_devices->{bbox},
+                    $ps_fname,
+                );
+                my @bbox_info = `$the_cmd 2>&1`; # Redirect stderr to stdout.
+                my($bbox, $hiresbbox);
+                foreach (@bbox_info) {
+                    chomp;
+                    if (/^%%BoundingBox:/) {
+                        $bbox = (split /: /)[1];
+                    }
+                    if (/^%%HiResBoundingBox:/) {
+                        $hiresbbox = (split /: /)[1];
+                    }
+                }
+                
+                # (2) .eps to .pdf with "-dUseCropBox" and possible rotation
+                # (2-1) .eps to .pdf with "-dUseCropBox"
+                $the_cmd = sprintf(
+                    "%s".
+                    " %s".
+                    " %s".
+                    " %s".
+                    " -sOutputFile=%s".
+                    " -c \"%s\"".
+                    " -f %s", # -f also terminates the tokens of -c above
+                    $self->exes->{gs},
+                    $self->interaction_params->{quartet},
+                    $self->interaction_params->{usecropbox},
+                    $gs_out_devices->{pdf}{cmd_opts},
+                    $pdf_fname_temp,
+                    "[/CropBox [$hiresbbox] /PAGES pdfmark",
+                    $ps_fname,
+                );
+                system $the_cmd;
+                
+                # (2-2) Rotate the cropped PDF if necessary (simultaneous
+                # use of CropBox and Orientation should be avoided; otherwise
+                # the before-cropped bbox will be used in the PDF).
+                if ($is_rotate) {
+                    $the_cmd = sprintf(
+                        "%s".
+                        " %s".
+                        " -sDEVICE=%s".
+                        " -sOutputFile=%s".
+                        " -c \"%s\"".
+                        " -f %s",
+                        $self->exes->{gs},
+                        $self->interaction_params->{quartet},
+                        $self->s_devices->{pdfwrite},
+                        $pdf_fname,
+                        (
+                            ' <</Orientation '.
+                            $self->Ctrls->orientation.
+                            '>> setpagedevice'
+                        ),
+                        $pdf_fname_temp,
+                    );
+                    system $the_cmd;
+                    unlink $pdf_fname_temp;
+                }
+                
+                # Renaming hook for (2-1)
+                rename($pdf_fname_temp, $pdf_fname) if -e $pdf_fname_temp;
+                
+                # Notification
+                printf(
+                    "[%s (%s page%s)] --> %s (v%s) converted.\n",
+                    $ps_fname,
+                    $num_pages,
+                    $num_pages >= 2 ? 's' : '',
+                    "\Updf",
+                    $self->pdfversion->{val},
+                );
+                
+                $is_pdfed = 1; # Hook
+            }
+            
+            # PDF/EPS conversion to other formats
+            # (i)  Multipage PS or called via phitar: pdf is converted
+            # (ii) Single-page real EPS: eps is converted
+            my $to_be_converted = $is_pdfed ? $pdf_fname : $ps_fname;
+            
+            # pdf-->pdf same fnames will erase the content;
+            # single-page ANGEL-generated PS files should not be PDF-converted.
+            my %devices = map { $_ => 1 } keys %{$gs_out_devices};
+            delete $devices{pdf} if ($is_pdfed and $num_pages == 1);
+            
+            foreach my $k (sort keys %devices) {
                 next if $gs_out_devices->{$k}{switch} =~ /off/i;
                 
                 # Define the name of the "output" file.
@@ -580,10 +720,12 @@ sub convert {
                     $out_dir.
                     ($is_phitar ? $self->FileIO->path_delim : '').
                     $bname.
-                    ($is_multipaged ? $self->FileIO->fname_sep."%03d" : '').
+                    ($is_multipage ? $self->FileIO->fname_sep."%03d" : '').
                     $gs_out_devices->{$k}{fname_flag}. # Nonempty: pngalpha
                     $self->FileIO->fname_ext_delim.
-                    $self->FileIO->fname_exts->{$gs_out_devices->{$k}{fformat}};
+                    $self->FileIO->fname_exts->{
+                        $gs_out_devices->{$k}{fformat}
+                    };
                 
                 # Run the executable.
                 $the_cmd = sprintf(
@@ -591,36 +733,36 @@ sub convert {
                     " %s".
                     " %s".
                     " %s".
-                    " -sOutputFile=%s".
-                    (
-                        # A command of PS, not GS: must be placed before
-                        # some dashed option such as -f (or @).
-                        # For details, see "General switches" of the 'use.htm'.
-                        $is_rotate ? (
-                            " -c \"<</Orientation ".
-                            $self->Ctrls->orientation.
-                            ">> setpagedevice\""
-                        ) : ""
-                    ).
-                    " -f %s",
+                    " -sOutputFile=%s". # Alt: -o %s
+                    "%s".
+                    " -f %s", # -f also terminates the tokens of -c above
                     $self->exes->{gs},
                     $self->interaction_params->{trio},
                     $other_than_the_trio,
                     $gs_out_devices->{$k}{cmd_opts},
                     $converted_fname,
-                    $ps_fname
+                    # > A command of PS, not of GS: must be placed before
+                    #   some switches such as -f (or @).
+                    #   For details, see "General switches" of the use.htm.
+                    # > $is_pdfed: already rotated
+                    ($is_rotate and not $is_pdfed) ? (
+                        ' -c "<</Orientation '.
+                        $self->Ctrls->orientation.
+                        '>> setpagedevice"'
+                    ) : '',
+                    $to_be_converted,
                 );
                 system $the_cmd;
                 
                 # Notify the completion.
                 $k =~ /pdf/i ? printf(
                     "[%s] --> %s (v%s) converted.\n",
-                    $ps_fname,
+                    $to_be_converted,
                     "\U$k",
                     $self->pdfversion->{val},
                 ) : printf(
                     "[%s] --> %s rasterized. (DPI: %s)\n",
-                    $ps_fname,
+                    $to_be_converted,
                     "\U$k",
                     $self->Ctrls->raster_dpi,
                 );
@@ -650,16 +792,16 @@ sub convert {
                     " %s".
                     " %s",
                     $self->exes->{inkscape},
-                    $ps_fname,
+                    $to_be_converted,
                     $inkscape_out_formats->{$k}{cmd_opts},
-                    $converted_fname
+                    $converted_fname,
                 );
                 system $the_cmd;
                 
                 # Notify the completion.
                 printf(
                     "[%s] --> %s converted.\n",
-                    $ps_fname, "\U$k"
+                    $to_be_converted, "\U$k"
                 );
             }
         }
