@@ -1,7 +1,7 @@
 #
 # Moose role for file I/O
 #
-# Copyright (c) 2018-2019 Jaewoong Jang
+# Copyright (c) 2018-2020 Jaewoong Jang
 # This script is available under the MIT license;
 # the license information is found in 'LICENSE'.
 #
@@ -12,7 +12,7 @@ use namespace::autoclean;
 
 our $PACKNAME = __PACKAGE__;
 our $VERSION  = '1.00';
-our $LAST     = '2019-04-18';
+our $LAST     = '2020-05-03';
 our $FIRST    = '2018-08-18';
 
 #
@@ -45,13 +45,13 @@ our $FIRST    = '2018-08-18';
 #
 # Filename elements
 #
-my %_fname_elems = ( # (key) attribute => (val) default
+my %_fname_elems = (  # (key) attribute => (val) default
     fname_sep       => '-',
-    fname_space     => '_', # Underline (_) instead of the space
+    fname_space     => '_',  # Underline (_) instead of the space
     fname_ext_delim => '.',
     # Filename placeholders
     inp      => undef,
-    inp_dmp  => undef, # Input file generating a dump file
+    inp_dmp  => undef,  # Input file generating a dump file
     out      => undef,
     tmp      => undef,
     dat      => undef,
@@ -82,41 +82,41 @@ has 'fname_exts' => (
 sub _build_fname_exts {
     return {
         # Common
-        tmp => 'tmp', # Temporary
+        tmp => 'tmp',  # Temporary
         exe => 'exe',
         bat => 'bat',
-        
+
         # Dataset
         dat => 'dat',
         csv => 'csv',
-        
+
         # Perl
         pl => 'pl',
         pm => 'pm',
-        
+
         # Markups
         xml  => 'xml',
         html => 'html',
-        
+
         # gnuplot
         gp => 'gp',
-        
+
         # PHITS
         inp => 'inp',
         out => 'out',
         ang => 'ang',
-        
+
         # ANSYS
         arr => 'arr',
         tab => 'tab',
         mac => 'mac',
-        
+
         # Office tools
         xls  => 'xls',
         xlsx => 'xlsx',
         ppt  => 'ppt',
         pptx => 'pptx',
-        
+
         # Vector graphics formats
         ps  => 'ps',
         eps => 'eps',
@@ -124,7 +124,7 @@ sub _build_fname_exts {
         svg => 'svg',
         emf => 'emf',
         wmf => 'wmf',
-        
+
         # Raster graphics formats
         png  => 'png',
         jpeg => 'jpg',
@@ -132,7 +132,7 @@ sub _build_fname_exts {
         tif  => 'tif',
         tiff => 'tiff',
         gif  => 'gif',
-        
+
         # Video formats
         avi   => 'avi',
         mpeg4 => 'mp4',

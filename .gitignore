@@ -1,19 +1,5 @@
-# eps2img records
-bak_eps2img.pl/
-eps2img_baker.bat
-
-# eps2img sample files
-samples/*.pdf
-samples/*.emf
-samples/*.wmf
-samples/*.png
-samples/*.jpg
-
-# MSWin link files
 *.lnk
 
-# POD-related
-eps2img_usage.bat
-eps2img.html
-pod2htmd.tmp
-eps2img_pod2html.bat
+# baker
+bak_*/
+*_baker.bat

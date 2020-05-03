@@ -1,0 +1,70 @@
+NAME
+    eps2img - Convert PS/EPS files to raster and vector images
+
+SYNOPSIS
+        perl eps2img.pl [--fmt=format ...] [--dpi=int] [--pdfversion=version]
+                        [--nocrop] [--nopause] [-a] file [file ...]
+
+DESCRIPTION
+        eps2img facilitates converting PS/EPS files to raster and vector images.
+        If you want to animate the rasterized images, consider using img2ani,
+        a sister program also written by the author. See "SEE ALSO" below.
+
+OPTIONS
+        --fmt=format ... (separator: ,) [default: png,pdf]
+            Output formats.
+            all
+            png
+            png_trn
+            jpg/jpeg
+            pdf
+            svg
+            emf
+            wmf
+
+        --dpi=int [default: 300]
+            Raster resolutions. Sane range 100--600.
+
+        --pdfversion=version [default: 1.4]
+            The version of converted PDF files.
+            The available PDF version is dependent on your Ghostscript version.
+
+        --nocrop
+            EPS files will not be cropped when rasterized.
+
+        --nopause
+            The shell will not be paused at the end of the program.
+
+        -a, --all
+            All PS/EPS files in the current working directory
+            will be converted to the designated output formats.
+
+        file (separator: ,)
+            PS/EPS files to be converted.
+
+EXAMPLES
+        perl eps2img.pl kuro_shiba.eps mame_shiba.eps --fmt=jpg --dpi=600
+        perl eps2img.pl -a --fmt=all
+        perl eps2img.pl ./samples/tiger.eps --fmt=pdf --pdfversion=1.7
+
+REQUIREMENTS
+        Perl 5
+            Moose, namespace::autoclean
+        Ghostscript, Inkscape
+
+SEE ALSO
+    eps2img on GitHub <https://github.com/jangcom/eps2img>
+
+    Want to animate the rasterized images? Check out the sister program:
+    img2ani on GitHub <https://github.com/jangcom/img2ani>
+
+AUTHOR
+    Jaewoong Jang <jangj@korea.ac.kr>
+
+COPYRIGHT
+    Copyright (c) 2018-2020 Jaewoong Jang
+
+LICENSE
+    This software is available under the MIT license; the license
+    information is found in 'LICENSE'.
+

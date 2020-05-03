@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 use strict;
 use warnings;
 use autodie;
@@ -9,19 +9,18 @@ use feature qw(say);
 use File::Basename qw(basename);
 use constant ARRAY => ref [];
 use constant HASH  => ref {};
-BEGIN { unshift @INC, "./lib"; } # @INC's become dotless since v5.26000
+BEGIN { unshift @INC, "./lib"; }  # @INC's become dotless since v5.26000
 use My::Moose::Image;
 
 
 our $VERSION = '1.06';
-our $LAST    = '2019-10-26';
+our $LAST    = '2020-05-03';
 our $FIRST   = '2018-08-23';
 
 
 #----------------------------------My::Toolset----------------------------------
 sub show_front_matter {
     # """Display the front matter."""
-
     my $prog_info_href = shift;
     my $sub_name = join('::', (caller(0))[0, 3]);
     croak "The 1st arg of [$sub_name] must be a hash ref!"
@@ -150,7 +149,6 @@ sub show_front_matter {
 
 sub validate_argv {
     # """Validate @ARGV against %cmd_opts."""
-
     my $argv_aref     = shift;
     my $cmd_opts_href = shift;
     my $sub_name = join('::', (caller(0))[0, 3]);
@@ -168,7 +166,7 @@ sub validate_argv {
     # Terminate the program if the number of required arguments passed
     # is not sufficient.
     #
-    my $argv_req_num = shift; # (OPTIONAL) Number of required args
+    my $argv_req_num = shift;  # (OPTIONAL) Number of required args
     if (defined $argv_req_num) {
         my $argv_req_num_passed = grep $_ !~ /-/, @$argv_aref;
         if ($argv_req_num_passed < $argv_req_num) {
@@ -224,12 +222,11 @@ sub validate_argv {
 
 sub show_elapsed_real_time {
     # """Show the elapsed real time."""
-
     my @opts = @_ if @_;
 
     # Parse optional arguments.
     my $is_return_copy = 0;
-    my @del; # Garbage can
+    my @del;  # Garbage can
     foreach (@opts) {
         if (/copy/i) {
             $is_return_copy = 1;
@@ -260,9 +257,7 @@ sub show_elapsed_real_time {
 
 sub pause_shell {
     # """Pause the shell."""
-
     my $notif = $_[0] ? $_[0] : "Press enter to exit...";
-
     print $notif;
     while (<STDIN>) { last; }
 
@@ -293,7 +288,7 @@ sub construct_timestamps {
     (my $hm = $hms) =~ s/[0-9]{2}$//;
 
     my %datetimes = (
-        none   => '', # Used for timestamp suppressing
+        none   => '',  # Used for timestamp suppressing
         ymd    => $ymd,
         hms    => $hms,
         hm     => $hm,
@@ -307,7 +302,6 @@ sub construct_timestamps {
 
 sub rm_duplicates {
     # """Remove duplicate items from an array."""
-
     my $aref = shift;
     my $sub_name = join('::', (caller(0))[0, 3]);
     croak "The 1st arg of [$sub_name] must be an array ref!"
@@ -324,39 +318,34 @@ sub rm_duplicates {
 
 sub parse_argv {
     # """@ARGV parser"""
-
     my(
         $argv_aref,
         $cmd_opts_href,
         $run_opts_href,
     ) = @_;
-    my %cmd_opts = %$cmd_opts_href; # For regexes
+    my %cmd_opts = %$cmd_opts_href;  # For regexes
 
-    # Parser: Overwrite default run options if requested by the user.
+    # Parser: Overwrite the default run options if requested by the user.
     my $field_sep = ',';
     foreach (@$argv_aref) {
         # PS/EPS filenames
         if (/[.]e?ps$/i and -e) {
             push @{$run_opts_href->{ps_fnames}}, $_;
         }
-
         # Convert all PS/EPS files in the CWD.
         if (/$cmd_opts{ps_all}/) {
             push @{$run_opts_href->{ps_fnames}}, glob '*.eps *.ps';
         }
-
         # Output formats
         if (/$cmd_opts{out_fmts}/i) {
             s/$cmd_opts{out_fmts}//i;
             @{$run_opts_href->{out_fmts}} = split /$field_sep/;
         }
-
         # Raster DPI
         if (/$cmd_opts{raster_dpi}/i) {
             ($run_opts_href->{raster_dpi} = $_) =~ s/$cmd_opts{raster_dpi}//i;
         }
-
-        # To-be-converted PDF version
+        # PDF version
         if (/$cmd_opts{pdfversion}/i) {
             s/$cmd_opts{pdfversion}//i;
             unless (/\b1[.][0-9]\b/) {
@@ -368,17 +357,10 @@ sub parse_argv {
             }
             $run_opts_href->{pdfversion} = $_;
         }
-
-        # -dEPSCrop will not be used.
+        # -dEPSCrop (Ghostscript) toggle
         if (/$cmd_opts{nocrop}/) {
             $run_opts_href->{is_nocrop} = 1;
         }
-
-        # The front matter won't be displayed at the beginning of the program.
-        if (/$cmd_opts{nofm}/) {
-            $run_opts_href->{is_nofm} = 1;
-        }
-
         # The shell won't be paused at the end of the program.
         if (/$cmd_opts{nopause}/) {
             $run_opts_href->{is_nopause} = 1;
@@ -392,7 +374,6 @@ sub parse_argv {
 
 sub convert_images {
     # """Run the convert method of Image."""
-
     my $run_opts_href = shift;
     my $image = Image->new();
 
@@ -411,7 +392,7 @@ sub convert_images {
     foreach my $ps (@{$run_opts_href->{ps_fnames}}) {
         $image->convert(
             ('raster_dpi='.$run_opts_href->{raster_dpi}),
-            @{$run_opts_href->{out_fmts}}, # Elements as separate args
+            @{$run_opts_href->{out_fmts}},  # Elements as separate args
             [$ps, ''],
             'quiet',
             $run_opts_href->{is_nocrop} ? '' : 'epscrop',
@@ -425,7 +406,6 @@ sub convert_images {
 
 sub eps2img {
     # """eps2img main routine"""
-
     if (@ARGV) {
         my %prog_info = (
             titl       => basename($0, '.pl'),
@@ -440,42 +420,38 @@ sub eps2img {
                 mail => 'jangj@korea.ac.kr',
             },
         );
-        my %cmd_opts = ( # Command-line opts
-            ps_all     => qr/-?-a(ll)?\b/i,
-            out_fmts   => qr/-?-o(ut)?\s*=\s*/i,
+        my %cmd_opts = (  # Command-line opts
+            # Supports backward compatibility
+            out_fmts   => qr/-?-(o(ut)?|fmt)\s*=\s*/i,
             raster_dpi => qr/-?-(raster_)?dpi\s*=\s*/i,
             pdfversion => qr/-?-pdf(?:version)?\s*=\s*/,
             nocrop     => qr/-?-nocrop\b/i,
-            nofm       => qr/-?-nofm\b/i,
             nopause    => qr/-?-nopause\b/i,
+            ps_all     => qr/-?-a(ll)?\b/i,
         );
-        my %run_opts = ( # Program run opts
-            ps_fnames  => [],
-            out_fmts   => ['png'],
+        my %run_opts = (  # Program run opts
+            out_fmts   => ['png', 'pdf'],
             raster_dpi => 300,
             pdfversion => '1.4',
             is_nocrop  => 0,
-            is_nofm    => 0,
             is_nopause => 0,
+            ps_fnames  => [],
         );
 
         # ARGV validation and parsing
         validate_argv(\@ARGV, \%cmd_opts);
         parse_argv(\@ARGV, \%cmd_opts, \%run_opts);
 
-        # Notification - beginning
-        show_front_matter(\%prog_info, 'prog', 'auth')
-            unless $run_opts{is_nofm};
+        # Notif
+        show_front_matter(\%prog_info, 'prog', 'auth');
 
         # Main
         convert_images(\%run_opts);
 
-        # Notification - end
+        # Notif
         show_elapsed_real_time("\n");
-        pause_shell()
-            unless $run_opts{is_nopause};
+        pause_shell() unless $run_opts{is_nopause};
     }
-
     system("perldoc \"$0\"") if not @ARGV;
 
     return;
@@ -491,64 +467,53 @@ eps2img - Convert PS/EPS files to raster and vector images
 
 =head1 SYNOPSIS
 
-    perl eps2img.pl [ps_file ...|-all] [-out=format ...] [-raster_dpi=int]
-                    [-pdfversion=version] [-nocrop] [-nofm] [-nopause]
+    perl eps2img.pl [--fmt=format ...] [--dpi=int] [--pdfversion=version]
+                    [--nocrop] [--nopause] [-a] file [file ...]
 
 =head1 DESCRIPTION
 
-    eps2img wraps Ghostscript and Inkscape to ease
-    converting PS/EPS files to raster and vector images.
-    eps2img uses Image.pm, a Moose class written by the author:
-        eps2img.pl --- Image.pm --- Ghostscript, Inkscape
-
+    eps2img facilitates converting PS/EPS files to raster and vector images.
     If you want to animate the rasterized images, consider using img2ani,
-    a sister program written by the author. See "SEE ALSO" below.
+    a sister program also written by the author. See "SEE ALSO" below.
 
 =head1 OPTIONS
 
-    ps_file ...
-        PS/EPS files to be converted. Multiple files should be
-        separated by the space character.
-
-    -all|-a
-        All PS/EPS files in the current working directory
-        will be converted to the designated output formats.
-
-    -out|-o=format ...
-        Output image formats. Multiple formats should be
-        separated by the comma (,).
-        all     (all formats below)
-        png     (default)
-        png_trn (transparent)
+    --fmt=format ... (separator: ,) [default: png,pdf]
+        Output formats.
+        all
+        png
+        png_trn
         jpg/jpeg
         pdf
+        svg
         emf
         wmf
 
-    -raster_dpi|-dpi=int
-        Raster (.png and .jpg) resolution.
-        Default 300, sane range 100--600.
+    --dpi=int [default: 300]
+        Raster resolutions. Sane range 100--600.
 
-    -pdfversion=version (-short form: -pdf, default: 1.4)
-        The version of converted PDF files. The available version
-        is subject to your Ghostscript version.
+    --pdfversion=version [default: 1.4]
+        The version of converted PDF files.
+        The available PDF version is dependent on your Ghostscript version.
 
-    -nocrop
+    --nocrop
         EPS files will not be cropped when rasterized.
 
-    -nofm
-        The front matter will not be displayed at the beginning of the program.
-
-    -nopause
+    --nopause
         The shell will not be paused at the end of the program.
-        Use it for a batch run.
+
+    -a, --all
+        All PS/EPS files in the current working directory
+        will be converted to the designated output formats.
+
+    file (separator: ,)
+        PS/EPS files to be converted.
 
 =head1 EXAMPLES
 
-    perl eps2img.pl kuro_shiba.eps mame_shiba.eps -o=jpg -raster_dpi=600
-    perl eps2img.pl -a -o=png_trn,jpg -raster_dpi=200 -nofm
-    perl eps2img.pl -a -o=all
-    perl eps2img.pl ./samples/tiger.eps -o=pdf -pdf=1.7
+    perl eps2img.pl kuro_shiba.eps mame_shiba.eps --fmt=jpg --dpi=600
+    perl eps2img.pl -a --fmt=all
+    perl eps2img.pl ./samples/tiger.eps --fmt=pdf --pdfversion=1.7
 
 =head1 REQUIREMENTS
 
@@ -569,7 +534,7 @@ Jaewoong Jang <jangj@korea.ac.kr>
 
 =head1 COPYRIGHT
 
-Copyright (c) 2018-2019 Jaewoong Jang
+Copyright (c) 2018-2020 Jaewoong Jang
 
 =head1 LICENSE
 

@@ -1,1 +1,1 @@
-perl eps2img.pl ./samples/tiger.eps -o=pdf -pdf=1.7
+perl eps2img.pl --fmt=png,pdf,svg --pdfversion=1.7 ./samples/tiger.eps

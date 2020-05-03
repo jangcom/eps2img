@@ -1,3 +1,6 @@
+v1.03 (2020-05-03)
+- .svg conversion commands added.
+
 v1.02 (2019-05-14)
 - Multipage PS files are now automatically recognized.
 - Multipage PS files are first converted to bbox-cropped PDF files,
