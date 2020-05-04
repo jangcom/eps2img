@@ -1,5 +1,8 @@
+v1.06 (2020-05-04)
+- Toolset.pm is now directly imported into the namespace.
+
 v1.06 (2020-05-03)
-- .svg conversion command added.
+- .svg conversion commands added.
 
 v1.05 (2019-05-16)
 - Whether or not to crop EPS files can be selected via the cmd-line opt.
