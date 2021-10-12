@@ -398,13 +398,13 @@ sub convert {
 
         # Path to the executables (/bin)
         # (i) When the env var has already been set:
-        if ($ENV{PATH} =~ /gs[0-9]+[.]?[0-9]+(\/|\\)bin/i) {
+        if ($ENV{PATH} =~ /gs(?:[0-9.]+)?[\/\\]bin/i) {
             @path_env_vars = split /$env_var_delim/, $ENV{PATH};
 
             # Find the path to the executables.
             foreach (@path_env_vars) {
                 $self->set_path_to_exes(gs => $_)
-                    if /gs[0-9]+[.]?[0-9]+(\/|\\)bin/i;
+                    if /gs(?:[0-9.]+)?[\/\\]bin/i;
             }
 
             # Capture the name of the gs executable.
@@ -415,7 +415,7 @@ sub convert {
             closedir $gs_bin_fh;
         }
         # (ii) When the env var has yet to been set:
-        elsif ($ENV{PATH} !~ /gs[0-9]+[.]?[0-9]+(\/|\\)bin/i) {
+        elsif ($ENV{PATH} !~ /gs(?:[0-9.]+)?[\/\\]bin/i) {
             say $self->Cmt->borders->{'*'};
             say "\aPath env var for the Ghostscript 'bin' dir NOT found!";
             say $self->Cmt->borders->{'*'};
@@ -423,7 +423,7 @@ sub convert {
 
         # Path to /lib
         # When the env var has yet to been set:
-        if ($ENV{PATH} !~ /gs[0-9]+[.]?[0-9]+(\/|\\)lib/i) {
+        if ($ENV{PATH} !~ /gs(?:[0-9.]+)?[\/\\]lib/i) {
             say $self->Cmt->borders->{'*'};
             say "\aPath var for the Ghostscript 'lib' dir NOT found!";
             say $self->Cmt->borders->{'*'};
