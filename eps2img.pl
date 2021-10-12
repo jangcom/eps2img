@@ -12,8 +12,8 @@ use constant HASH  => ref {};
 BEGIN { unshift @INC, "./lib"; }  # @INC's become dotless since v5.26000
 use My::Toolset qw(:coding :rm);
 use My::Moose::Image;
-our $VERSION = '1.06';
-our $LAST    = '2020-05-03';
+our $VERSION = '1.07';
+our $LAST    = '2021-10-12';
 our $FIRST   = '2018-08-23';
 
 
@@ -233,7 +233,7 @@ Jaewoong Jang <jangj@korea.ac.kr>
 
 =head1 COPYRIGHT
 
-Copyright (c) 2018-2020 Jaewoong Jang
+Copyright (c) 2018-2021 Jaewoong Jang
 
 =head1 LICENSE
 
