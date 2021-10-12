@@ -97,7 +97,7 @@
 
 <h1 id="COPYRIGHT">COPYRIGHT</h1>
 
-<p>Copyright (c) 2018-2020 Jaewoong Jang</p>
+<p>Copyright (c) 2018-2021 Jaewoong Jang</p>
 
 <h1 id="LICENSE">LICENSE</h1>
 
