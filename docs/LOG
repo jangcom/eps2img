@@ -1,3 +1,7 @@
+v1.07 (2021-10-12)
+- The regex searching for the path to Ghostscript has been fixed.
+  See the issue #5 for details.
+
 v1.06 (2020-05-04)
 - Toolset.pm is now directly imported into the namespace.
 
