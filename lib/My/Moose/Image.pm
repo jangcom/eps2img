@@ -1,7 +1,7 @@
 #
 # Moose class for Image
 #
-# Copyright (c) 2018-2020 Jaewoong Jang
+# Copyright (c) 2018-2021 Jaewoong Jang
 # This script is available under the MIT license;
 # the license information is found in 'LICENSE'.
 #
@@ -17,7 +17,7 @@ use constant HASH  => ref {};
 
 our $PACKNAME = __PACKAGE__;
 our $VERSION  = '1.03';
-our $LAST     = '2020-05-03';
+our $LAST     = '2021-10-12';
 our $FIRST    = '2018-08-19';
 
 has 'Cmt' => (
