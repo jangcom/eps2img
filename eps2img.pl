@@ -12,8 +12,8 @@ use constant HASH  => ref {};
 BEGIN { unshift @INC, "./lib"; }  # @INC's become dotless since v5.26000
 use My::Toolset qw(:coding :rm);
 use My::Moose::Image;
-our $VERSION = '1.07';
-our $LAST    = '2021-10-12';
+our $VERSION = '1.08';
+our $LAST    = '2023-01-30';
 our $FIRST   = '2018-08-23';
 
 
@@ -218,6 +218,8 @@ eps2img - Convert PS/EPS files to raster and vector images
 
     Perl 5
         Moose, namespace::autoclean
+        * Consider registering an environment variable called "PERL5LIB"
+          with a value of "%userprofile%/Documents/GitHub/eps2img/lib".
     Ghostscript, Inkscape
 
 =head1 SEE ALSO
@@ -233,7 +235,7 @@ Jaewoong Jang <jangj@korea.ac.kr>
 
 =head1 COPYRIGHT
 
-Copyright (c) 2018-2021 Jaewoong Jang
+Copyright (c) 2018-2023 Jaewoong Jang
 
 =head1 LICENSE
 

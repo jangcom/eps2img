@@ -50,6 +50,8 @@ EXAMPLES
 REQUIREMENTS
         Perl 5
             Moose, namespace::autoclean
+            * Consider registering an environment variable called "PERL5LIB"
+              with a value of "%userprofile%/Documents/GitHub/eps2img/lib".
         Ghostscript, Inkscape
 
 SEE ALSO
@@ -62,7 +64,7 @@ AUTHOR
     Jaewoong Jang <jangj@korea.ac.kr>
 
 COPYRIGHT
-    Copyright (c) 2018-2021 Jaewoong Jang
+    Copyright (c) 2018-2023 Jaewoong Jang
 
 LICENSE
     This software is available under the MIT license; the license
