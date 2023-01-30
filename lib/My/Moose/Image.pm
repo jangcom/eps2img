@@ -1,7 +1,7 @@
 #
 # Moose class for Image
 #
-# Copyright (c) 2018-2021 Jaewoong Jang
+# Copyright (c) 2018-2023 Jaewoong Jang
 # This script is available under the MIT license;
 # the license information is found in 'LICENSE'.
 #
@@ -16,8 +16,8 @@ use constant ARRAY => ref [];
 use constant HASH  => ref {};
 
 our $PACKNAME = __PACKAGE__;
-our $VERSION  = '1.03';
-our $LAST     = '2021-10-12';
+our $VERSION  = '1.04';
+our $LAST     = '2023-01-30';
 our $FIRST    = '2018-08-19';
 
 has 'Cmt' => (
@@ -145,11 +145,8 @@ has 'rasters_dirs' => (
 #
 # Inkscape command-line options
 #
-has 'inkscape_export' => (
-    is      => 'ro',
-    isa     => 'HashRef[Str]',
-    lazy    => 1,
-    default => sub {
+my %_inkscape_cmd_opts = (
+    inkscape_export => sub {
         {
             # https://inkscape.org/doc/inkscape-man.html#OPTIONS
             svg => '-l',  # Alt: --export-plain-svg
@@ -158,6 +155,17 @@ has 'inkscape_export' => (
         }
     },
 );
+
+has $_ => (
+    traits  => ['Hash'],
+    is      => 'ro',
+    isa     => 'HashRef[Str]',
+    lazy    => 1,
+    default => $_inkscape_cmd_opts{$_},
+    handles => {
+        'set_'.$_ => 'set',
+    },
+) for keys %_inkscape_cmd_opts;
 
 
 sub convert {
@@ -274,6 +282,115 @@ sub convert {
     my $env_var_delim = $self->FileIO->env_var_delim;
     my @path_env_vars;
 
+    # Construct comment borders.
+    $self->Cmt->set_borders(
+        leading_symb => $self->Cmt->symb,
+        border_symbs => ['*', '=', '-'],
+    );
+
+    #
+    # Examine environment variable settings and acquire
+    # the names of the executables.
+    # For Ghostscript running on MS Windows,
+    # the name of the executable varies also with
+    # the integer-bit of the installation.
+    #
+    # The conditional block is executed only once "during the program run"
+    # by using "a state variable".
+    #
+    # [Ghostscript]
+    # use.htm#o_option
+    # use.htm#Summary_of_environment_variables
+    #
+    state $chk_env_var = 1;  # NOT reinitialized at the next call
+    if ($chk_env_var == 1 and $^O =~ /MSWin32/i) {
+        #
+        # Ghostscript
+        #
+
+        # Path to the executables (/bin)
+        # (i) When the env var has already been set:
+        if ($ENV{PATH} =~ /gs(?:[0-9.]+)?[\/\\]bin/i) {
+            @path_env_vars = split /$env_var_delim/, $ENV{PATH};
+
+            # Find the path to the executables.
+            foreach (@path_env_vars) {
+                $self->set_path_to_exes(gs => $_)
+                    if /gs(?:[0-9.]+)?[\/\\]bin/i;
+            }
+
+            # Capture the name of the gs executable.
+            opendir my $gs_bin_fh, $self->path_to_exes->{gs};
+            foreach (readdir $gs_bin_fh) {
+                $self->set_exes(gs => $_) if /gswin(32|64)c\b/i;
+            }
+            closedir $gs_bin_fh;
+        }
+        # (ii) When the env var has yet to been set:
+        elsif ($ENV{PATH} !~ /gs(?:[0-9.]+)?[\/\\]bin/i) {
+            say $self->Cmt->borders->{'*'};
+            say "\aPath env var for the Ghostscript 'bin' dir NOT found!";
+            say $self->Cmt->borders->{'*'};
+        }
+
+        # Path to /lib
+        # When the env var has yet to been set:
+        if ($ENV{PATH} !~ /gs(?:[0-9.]+)?[\/\\]lib/i) {
+            say $self->Cmt->borders->{'*'};
+            say "\aPath var for the Ghostscript 'lib' dir NOT found!";
+            say $self->Cmt->borders->{'*'};
+        }
+
+        #
+        # Inkscape
+        #
+
+        # Path to the executable
+        # (i) When the env var has already been set:
+        if ($ENV{PATH} =~ /inkscape/i) {
+            @path_env_vars = split /$env_var_delim/, $ENV{PATH};
+
+            # Find the path to the executables.
+            foreach (@path_env_vars) {
+                $self->set_path_to_exes(inkscape => $_) if /inkscape/i;
+            }
+
+            # Capture the name of the Inkscape executable.
+            opendir my $inkscape_fh, $self->path_to_exes->{inkscape};
+            foreach (readdir $inkscape_fh) {
+                $self->set_exes(inkscape => $_) if /inkscape[.]exe\b/i;
+            }
+            closedir $inkscape_fh;
+
+            # Inkscape forward compatibility (>= v1.x.x)
+            my $_inkscape_exe = $self->exes->{inkscape};
+            my $_inkscape_ver = `$_inkscape_exe --version`;
+            $_inkscape_ver =~ s/.*Inkscape\s*([0-9.\-]+).*/$1/i;
+            my $is_inkscape_aft_ver1 = (split /[.]/, $_inkscape_ver)[0];
+            if ($is_inkscape_aft_ver1) {
+                $self->set_inkscape_export(
+                    $_ => (
+                        "--export-type=$_".
+                        " --export-area-drawing".
+                        # Without the command below, "_out" will be generated.
+                        " --export-overwrite"
+                    ),
+                ) for keys %{$self->inkscape_export};
+            }
+        }
+        # (ii) When the env var has yet to been set:
+        elsif ($ENV{PATH} !~ /inkscape/i) {
+            say $self->Cmt->borders->{'*'};
+            say "\aPath env var for Inkscape NOT found!";
+            say $self->Cmt->borders->{'*'};
+        }
+
+        #
+        # Make this block not performed at the next call.
+        #
+        $chk_env_var = 0;
+    }
+
     #
     # [Ghostscript] Output devices
     #
@@ -369,99 +486,6 @@ sub convert {
             cmd_opts   => sprintf("%s", $self->inkscape_export->{wmf}),
         },
     };
-
-    # Construct comment borders.
-    $self->Cmt->set_borders(
-        leading_symb => $self->Cmt->symb,
-        border_symbs => ['*', '=', '-'],
-    );
-
-    #
-    # Examine environment variable settings and acquire
-    # the names of the executables.
-    # For Ghostscript running on MS Windows,
-    # the name of the executable varies also with
-    # the integer-bit of the installation.
-    #
-    # The conditional block is executed only once "during the program run"
-    # by using "a state variable".
-    #
-    # [Ghostscript]
-    # use.htm#o_option
-    # use.htm#Summary_of_environment_variables
-    #
-    state $chk_env_var = 1;  # NOT reinitialized at the next call
-    if ($chk_env_var == 1 and $^O =~ /MSWin32/i) {
-        #
-        # Ghostscript
-        #
-
-        # Path to the executables (/bin)
-        # (i) When the env var has already been set:
-        if ($ENV{PATH} =~ /gs(?:[0-9.]+)?[\/\\]bin/i) {
-            @path_env_vars = split /$env_var_delim/, $ENV{PATH};
-
-            # Find the path to the executables.
-            foreach (@path_env_vars) {
-                $self->set_path_to_exes(gs => $_)
-                    if /gs(?:[0-9.]+)?[\/\\]bin/i;
-            }
-
-            # Capture the name of the gs executable.
-            opendir my $gs_bin_fh, $self->path_to_exes->{gs};
-            foreach (readdir $gs_bin_fh) {
-                $self->set_exes(gs => $_) if /gswin(32|64)c\b/i;
-            }
-            closedir $gs_bin_fh;
-        }
-        # (ii) When the env var has yet to been set:
-        elsif ($ENV{PATH} !~ /gs(?:[0-9.]+)?[\/\\]bin/i) {
-            say $self->Cmt->borders->{'*'};
-            say "\aPath env var for the Ghostscript 'bin' dir NOT found!";
-            say $self->Cmt->borders->{'*'};
-        }
-
-        # Path to /lib
-        # When the env var has yet to been set:
-        if ($ENV{PATH} !~ /gs(?:[0-9.]+)?[\/\\]lib/i) {
-            say $self->Cmt->borders->{'*'};
-            say "\aPath var for the Ghostscript 'lib' dir NOT found!";
-            say $self->Cmt->borders->{'*'};
-        }
-
-        #
-        # Inkscape
-        #
-
-        # Path to the executable
-        # (i) When the env var has already been set:
-        if ($ENV{PATH} =~ /inkscape/i) {
-            @path_env_vars = split /$env_var_delim/, $ENV{PATH};
-
-            # Find the path to the executables.
-            foreach (@path_env_vars) {
-                $self->set_path_to_exes(inkscape => $_) if /inkscape/i;
-            }
-
-            # Capture the name of the Inkscape executable.
-            opendir my $inkscape_fh, $self->path_to_exes->{inkscape};
-            foreach (readdir $inkscape_fh) {
-                $self->set_exes(inkscape => $_) if /inkscape\b/i;
-            }
-            closedir $inkscape_fh;
-        }
-        # (ii) When the env var has yet to been set:
-        elsif ($ENV{PATH} !~ /inkscape/i) {
-            say $self->Cmt->borders->{'*'};
-            say "\aPath env var for Inkscape NOT found!";
-            say $self->Cmt->borders->{'*'};
-        }
-
-        #
-        # Make this block not performed at the next call.
-        #
-        $chk_env_var = 0;
-    }
 
     #
     # Notify the beginning of the routine.

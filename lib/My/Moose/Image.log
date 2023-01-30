@@ -1,3 +1,6 @@
+v1.08 (2023-01-30)
+- Commands enabling Inkscape forward (>= v1.x.x) compatibility added.
+
 v1.03 (2020-05-03)
 - .svg conversion commands added.
 

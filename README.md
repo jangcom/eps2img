@@ -83,6 +83,8 @@
 
 <pre><code>    Perl 5
         Moose, namespace::autoclean
+        * Consider registering an environment variable called &quot;PERL5LIB&quot;
+          with a value of &quot;%userprofile%/Documents/GitHub/eps2img/lib&quot;.
     Ghostscript, Inkscape</code></pre>
 
 <h1 id="SEE-ALSO">SEE ALSO</h1>
@@ -97,7 +99,7 @@
 
 <h1 id="COPYRIGHT">COPYRIGHT</h1>
 
-<p>Copyright (c) 2018-2021 Jaewoong Jang</p>
+<p>Copyright (c) 2018-2023 Jaewoong Jang</p>
 
 <h1 id="LICENSE">LICENSE</h1>
 
