@@ -4,6 +4,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
+<title>eps2img - Convert PS/EPS files to raster and vector images</title>
 <meta http-equiv="content-type" content="text/html; charset=utf-8" />
 <link rev="made" href="mailto:" />
 </head>
@@ -32,7 +33,8 @@
 <h1 id="SYNOPSIS">SYNOPSIS</h1>
 
 <pre><code>    perl eps2img.pl [--fmt=format ...] [--dpi=int] [--pdfversion=version]
-                    [--nocrop] [--nopause] [-a] file [file ...]</code></pre>
+                    [--nocrop] [--legacy_epscrop] [--norotate] [--verbose]
+                    [--nopause] [-a] file [file ...]</code></pre>
 
 <h1 id="DESCRIPTION">DESCRIPTION</h1>
 
@@ -61,7 +63,16 @@
         The available PDF version is dependent on your Ghostscript version.
 
     --nocrop
-        EPS files will not be cropped when rasterized.
+        EPS files will not be cropped when PDFed and PDF-rasterized.
+
+    --legacy_epscrop
+        The Ghostscript command -dEPSCrop will be used instead of -dUseCropBox.
+
+    --norotate
+        EPS files will not be rotated when PDFed and rasterized.
+
+    --verbose
+        Display what are being commanded to the dependency executables.
 
     --nopause
         The shell will not be paused at the end of the program.

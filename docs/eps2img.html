@@ -31,7 +31,8 @@
 <h1 id="SYNOPSIS">SYNOPSIS</h1>
 
 <pre><code>    perl eps2img.pl [--fmt=format ...] [--dpi=int] [--pdfversion=version]
-                    [--nocrop] [--nopause] [-a] file [file ...]</code></pre>
+                    [--nocrop] [--legacy_epscrop] [--norotate] [--verbose]
+                    [--nopause] [-a] file [file ...]</code></pre>
 
 <h1 id="DESCRIPTION">DESCRIPTION</h1>
 
@@ -60,7 +61,16 @@
         The available PDF version is dependent on your Ghostscript version.
 
     --nocrop
-        EPS files will not be cropped when rasterized.
+        EPS files will not be cropped when PDFed and PDF-rasterized.
+
+    --legacy_epscrop
+        The Ghostscript command -dEPSCrop will be used instead of -dUseCropBox.
+
+    --norotate
+        EPS files will not be rotated when PDFed and rasterized.
+
+    --verbose
+        Display what are being commanded to the dependency executables.
 
     --nopause
         The shell will not be paused at the end of the program.

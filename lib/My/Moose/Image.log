@@ -1,3 +1,11 @@
+v1.09 (2023-11-10)
+- The default Ghostscript command for cropping has been changed from
+  -dEPSCrop to -dUseCropBox.
+- The converted image files are now rotated to landscape forms by default.
+- The command-line arguments input to Ghostscript or Inkscape can now be
+  displayed on the shell using a toggle called --verbose.
+- PDF conversion is no longer run when not asked.
+
 v1.08 (2023-01-30)
 - Commands enabling Inkscape forward (>= v1.x.x) compatibility added.
 
