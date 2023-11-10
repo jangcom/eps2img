@@ -16,8 +16,8 @@ use constant ARRAY => ref [];
 use constant HASH  => ref {};
 
 our $PACKNAME = __PACKAGE__;
-our $VERSION  = '1.04';
-our $LAST     = '2023-01-30';
+our $VERSION  = '1.05';
+our $LAST     = '2023-11-10';
 our $FIRST    = '2018-08-19';
 
 has 'Cmt' => (
@@ -200,8 +200,13 @@ sub convert {
 
     # Routine execution options - General
     my @your_interaction_params;
-    my $is_rotate    = 0;
-    my $is_multipage = 0;
+    my $is_multipage      = 0;
+    my $is_crop           = grep $_ =~ /^crop/i, @your_args;
+    my $is_legacy_epscrop = grep $_ =~ /^legacy_epscrop/i, @your_args;
+    push @your_interaction_params,
+        $self->interaction_params->{epscrop} if $is_legacy_epscrop;
+    my $is_rotate         = 0;
+    my $is_verbose        = grep $_ =~ /^verbose/i, @your_args;
     foreach (@your_args) {
         #
         # Ghostscript
@@ -220,8 +225,6 @@ sub convert {
 
         push @your_interaction_params,
             $self->interaction_params->{quiet}      if /^quiet$/i;
-        push @your_interaction_params,
-            $self->interaction_params->{epscrop}    if /^epscrop$/i;
         push @your_interaction_params,
             $self->interaction_params->{epsfitpage} if /^epsfitpage$/i;
         if (/^pdfversion\s*=\s*/i) {
@@ -270,6 +273,13 @@ sub convert {
             $self->interaction_params->{usecropbox},
             $self->Ctrls->mute =~ /on/i ?
                 ' '.$self->interaction_params->{quiet} : '',
+        );
+    }
+    if ($is_crop and not $is_legacy_epscrop) {
+        $other_than_the_trio = sprintf(
+            "%s %s",
+            $self->interaction_params->{usecropbox},
+            "@your_interaction_params",
         );
     }
     else {
@@ -649,7 +659,14 @@ sub convert {
                 $self->FileIO->fname_exts->{$gs_out_devices->{pdf}{fformat}};
             (my $pdf_fname_temp = $pdf_fname) =~ s/[.]pdf$/_.pdf/i;
 
-            if ($is_multipage or $is_phitar) {
+            if (
+                $self->Ctrls->pdf_switch =~ /on/i and
+                (
+                    $is_multipage or
+                    $is_phitar or
+                    ($is_crop and not $is_legacy_epscrop)
+                )
+            ) {
                 # (1) Obtain the bbox info.
                 $the_cmd = sprintf(
                     "%s".
@@ -691,6 +708,7 @@ sub convert {
                     "[/CropBox [$hiresbbox] /PAGES pdfmark",
                     $ps_fname,
                 );
+                say $the_cmd if $is_verbose;
                 system $the_cmd;
 
                 # (2-2) Rotate the cropped PDF if necessary (simultaneous
@@ -715,6 +733,7 @@ sub convert {
                         ),
                         $pdf_fname_temp,
                     );
+                    say $the_cmd if $is_verbose;
                     system $the_cmd;
                     unlink $pdf_fname_temp;
                 }
@@ -785,6 +804,7 @@ sub convert {
                     ) : '',
                     $to_be_converted,
                 );
+                say $the_cmd if $is_verbose;
                 system $the_cmd;
 
                 # Notify the completion.
@@ -829,6 +849,7 @@ sub convert {
                     $inkscape_out_formats->{$k}{cmd_opts},
                     $converted_fname,
                 );
+                say $the_cmd if $is_verbose;
                 system $the_cmd;
 
                 # Notify the completion.

@@ -13,7 +13,7 @@ BEGIN { unshift @INC, "./lib"; }  # @INC's become dotless since v5.26000
 use My::Toolset qw(:coding :rm);
 use My::Moose::Image;
 our $VERSION = '1.08';
-our $LAST    = '2023-01-30';
+our $LAST    = '2023-11-10';
 our $FIRST   = '2018-08-23';
 
 
@@ -58,9 +58,21 @@ sub parse_argv {
             }
             $run_opts_href->{pdfversion} = $_;
         }
-        # -dEPSCrop (Ghostscript) toggle
+        # Toggle: epscrop
         if (/$cmd_opts{nocrop}/) {
             $run_opts_href->{is_nocrop} = 1;
+        }
+        # Toggle: Legacy -dEPSCrop (Ghostscript)
+        if (/$cmd_opts{legacy_epscrop}/) {
+            $run_opts_href->{is_legacy_epscrop} = 1;
+        }
+        # Toggle: PDF rotation to landscape
+        if (/$cmd_opts{norotate}/) {
+            $run_opts_href->{is_norotate} = 1;
+        }
+        # Display what are being commanded to the dependency executables.
+        if (/$cmd_opts{verbose}/) {
+            $run_opts_href->{is_verbose} = 1;
         }
         # The shell won't be paused at the end of the program.
         if (/$cmd_opts{nopause}/) {
@@ -96,7 +108,14 @@ sub convert_images {
             @{$run_opts_href->{out_fmts}},  # Elements as separate args
             [$ps, ''],
             'quiet',
-            $run_opts_href->{is_nocrop} ? '' : 'epscrop',
+            $run_opts_href->{is_nocrop} ?
+                '' : 'crop',
+            $run_opts_href->{is_legacy_epscrop} ?
+                'legacy_epscrop' : '',
+            $run_opts_href->{is_norotate} ?
+                '' : 'rotate',
+            $run_opts_href->{is_verbose} ?
+                'verbose' : '',
             'pdfversion='.$run_opts_href->{pdfversion},
         );
     }
@@ -121,20 +140,26 @@ sub eps2img {
         );
         my %cmd_opts = (  # Command-line opts
             # Supports backward compatibility
-            out_fmts   => qr/-?-(o(ut)?|fmt)\s*=\s*/i,
-            raster_dpi => qr/-?-(raster_)?dpi\s*=\s*/i,
-            pdfversion => qr/-?-pdf(?:version)?\s*=\s*/,
-            nocrop     => qr/-?-nocrop\b/i,
-            nopause    => qr/-?-nopause\b/i,
-            ps_all     => qr/-?-a(ll)?\b/i,
+            out_fmts       => qr/-?-(o(ut)?|fmt)\s*=\s*/i,
+            raster_dpi     => qr/-?-(raster_)?dpi\s*=\s*/i,
+            pdfversion     => qr/-?-pdf(?:version)?\s*=\s*/,
+            nocrop         => qr/-?-nocrop\b/i,
+            legacy_epscrop => qr/-?-legacy_epscrop\b/i,
+            norotate       => qr/-?-norotate\b/i,
+            verbose        => qr/-?-verbose\b/i,
+            nopause        => qr/-?-nopause\b/i,
+            ps_all         => qr/-?-a(ll)?\b/i,
         );
         my %run_opts = (  # Program run opts
-            out_fmts   => ['png', 'pdf'],
-            raster_dpi => 300,
-            pdfversion => '1.4',
-            is_nocrop  => 0,
-            is_nopause => 0,
-            ps_fnames  => [],
+            out_fmts          => ['png', 'pdf'],
+            raster_dpi        => 300,
+            pdfversion        => '1.4',
+            is_nocrop         => 0,
+            is_legacy_epscrop => 0,
+            is_norotate       => 0,
+            is_verbose        => 0,
+            is_nopause        => 0,
+            ps_fnames         => [],
         );
 
         # ARGV validation and parsing
@@ -167,7 +192,8 @@ eps2img - Convert PS/EPS files to raster and vector images
 =head1 SYNOPSIS
 
     perl eps2img.pl [--fmt=format ...] [--dpi=int] [--pdfversion=version]
-                    [--nocrop] [--nopause] [-a] file [file ...]
+                    [--nocrop] [--legacy_epscrop] [--norotate] [--verbose]
+                    [--nopause] [-a] file [file ...]
 
 =head1 DESCRIPTION
 
@@ -196,7 +222,16 @@ eps2img - Convert PS/EPS files to raster and vector images
         The available PDF version is dependent on your Ghostscript version.
 
     --nocrop
-        EPS files will not be cropped when rasterized.
+        EPS files will not be cropped when PDFed and PDF-rasterized.
+
+    --legacy_epscrop
+        The Ghostscript command -dEPSCrop will be used instead of -dUseCropBox.
+
+    --norotate
+        EPS files will not be rotated when PDFed and rasterized.
+
+    --verbose
+        Display what are being commanded to the dependency executables.
 
     --nopause
         The shell will not be paused at the end of the program.
