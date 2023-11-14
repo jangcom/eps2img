@@ -1,4 +1,8 @@
-v1.09 (2023-11-10)
+v1.06 (2023-11-14)
+- The input file extension names had been unintentionally included in
+  Inkscape output file names; the extension names are now longer included.
+  
+v1.05 (2023-11-10)
 - The default Ghostscript command for cropping has been changed from
   -dEPSCrop to -dUseCropBox.
 - The converted image files are now rotated to landscape forms by default.
@@ -6,7 +10,7 @@ v1.09 (2023-11-10)
   displayed on the shell using a toggle called --verbose.
 - PDF conversion is no longer run when not asked.
 
-v1.08 (2023-01-30)
+v1.04 (2023-01-30)
 - Commands enabling Inkscape forward (>= v1.x.x) compatibility added.
 
 v1.03 (2020-05-03)
