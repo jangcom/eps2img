@@ -16,8 +16,8 @@ use constant ARRAY => ref [];
 use constant HASH  => ref {};
 
 our $PACKNAME = __PACKAGE__;
-our $VERSION  = '1.05';
-our $LAST     = '2023-11-10';
+our $VERSION  = '1.06';
+our $LAST     = '2023-11-14';
 our $FIRST    = '2018-08-19';
 
 has 'Cmt' => (
@@ -843,7 +843,7 @@ sub convert {
                     "%s".
                     " %s".
                     " %s".
-                    " %s",
+                    " --export-filename=%s",
                     $self->exes->{inkscape},
                     $to_be_converted,
                     $inkscape_out_formats->{$k}{cmd_opts},
