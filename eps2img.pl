@@ -7,9 +7,10 @@ use Carp qw(croak);
 use DateTime;
 use feature qw(say);
 use File::Basename qw(basename);
+use FindBin;
+use lib "$FindBin::Bin/lib";
 use constant ARRAY => ref [];
 use constant HASH  => ref {};
-BEGIN { unshift @INC, "./lib"; }  # @INC's become dotless since v5.26000
 use My::Toolset qw(:coding :rm);
 use My::Moose::Image;
 our $VERSION = '1.08';
